@@ -1,0 +1,55 @@
+{
+  "source": "reference/jellyfish-3d-style-board.png",
+  "sha256": "6da26ad0f01ad730eb52e7d360fa7c9641103ccfca6ed0859b1985dbe20a5ee2",
+  "output": "256x256 WebP, edge-connected background removed",
+  "regions": {
+    "wild": [
+      64,
+      172,
+      435,
+      454
+    ],
+    "bonus": [
+      548,
+      156,
+      464,
+      470
+    ],
+    "green": [
+      1030,
+      194,
+      455,
+      432
+    ],
+    "blue": [
+      1530,
+      177,
+      477,
+      449
+    ],
+    "pink": [
+      28,
+      799,
+      475,
+      448
+    ],
+    "aqua": [
+      563,
+      799,
+      465,
+      448
+    ],
+    "purple": [
+      1059,
+      793,
+      472,
+      454
+    ],
+    "fire": [
+      1576,
+      770,
+      453,
+      477
+    ]
+  }
+}
