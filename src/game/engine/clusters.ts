@@ -1,9 +1,8 @@
 import { GAME_CONFIG as C } from '../config';
 import { isNormal, type Board, type Cluster, type Position } from '../types';
-import { key, neighbors, position } from './board';
+import { key, neighbors } from './board';
 
-// First find normal-only components. Each wild attaches directly to exactly one
-// original component. Assignments never propagate through other wilds.
+// Same-symbol orthogonal components only. Specials never extend a cluster.
 export function findClusters(board: Board): Cluster[] {
   const components: Cluster[] = [],
     owner = new Map<number, number>();
@@ -26,25 +25,5 @@ export function findClusters(board: Board): Cluster[] {
       }
       components.push(component);
     }
-  const sizes = components.map((c) => c.positions.length);
-  for (let k = 0; k < C.rows * C.columns; k++) {
-    const p = position(k);
-    if (board[p.row][p.col]?.symbol !== 'wild') continue;
-    const adjacent = [
-      ...new Set(
-        neighbors(p)
-          .map((n) => owner.get(key(n)))
-          .filter((n): n is number => n !== undefined),
-      ),
-    ];
-    adjacent.sort(
-      (a, b) =>
-        sizes[b] - sizes[a] ||
-        C.normalSymbols.indexOf(components[a].symbol) -
-          C.normalSymbols.indexOf(components[b].symbol) ||
-        a - b,
-    );
-    if (adjacent.length) components[adjacent[0]].positions.push(p);
-  }
   return components.filter((c) => c.positions.length >= C.minClusterSize);
 }

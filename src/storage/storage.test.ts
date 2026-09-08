@@ -110,3 +110,22 @@ describe('local game service', () => {
     await expect(service.startRound({ scenario: 'no-match' })).resolves.toBeDefined();
   });
 });
+
+it('preserves all valid legacy stats while discarding retired board and pending data', () => {
+  const stats = {
+    ...defaultStats(),
+    plays: 7,
+    mockPoints: 321,
+    totalScore: 32100,
+    totalGames: 8,
+    fastMode: true,
+    soundEnabled: true,
+  };
+  const retired = {
+    board: [[{ symbol: 'blue' }, { symbol: 'wild' }]],
+    pendingResult: { symbol: 'wild' },
+  };
+  expect(
+    parseStats(JSON.stringify({ version: 1, ...retired, stats: { ...stats, ...retired } })),
+  ).toEqual(stats);
+});

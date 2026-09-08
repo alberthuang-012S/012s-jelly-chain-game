@@ -1,7 +1,7 @@
-export const NORMAL_SYMBOLS = ['pink', 'blue', 'green', 'purple', 'aqua'] as const;
+export const NORMAL_SYMBOLS = ['pink', 'yellow', 'green', 'purple', 'aqua'] as const;
 export type NormalSymbol = (typeof NORMAL_SYMBOLS)[number];
-export type SymbolId = NormalSymbol | 'fire' | 'wild' | 'bonus';
-export type SpecialType = 'fire' | 'wild' | 'bonus' | null;
+export type SymbolId = NormalSymbol | 'fire' | 'bonus';
+export type SpecialType = 'fire' | 'bonus' | null;
 export interface Cell {
   id: string;
   symbol: SymbolId;

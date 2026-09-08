@@ -40,7 +40,14 @@ test('complete round, duplicate start prevention, skip, persisted results and se
   expect(errors).toEqual([]);
 });
 
-for (const scenario of ['FIRE', 'WILD', 'BONUS', 'NO MATCH', 'LARGE CLUSTER']) {
+for (const scenario of [
+  'FIRE',
+  'YELLOW CLUSTER',
+  'BONUS',
+  'NO MATCH',
+  'LARGE CLUSTER',
+  'HIGH COMBO',
+]) {
   test(`${scenario} completes through the actual animation timeline`, async ({ page }) => {
     await page.goto('/?debug=1');
     await page.getByRole('button', { name: 'FAST MODE' }).click();
@@ -170,4 +177,117 @@ test('mobile shop, guide and bonus dialogs are accessible and stay within viewpo
     expect(audit.violations).toEqual([]);
     await page.keyboard.press('Escape');
   }
+});
+
+for (const width of [375, 390, 430, 1440]) {
+  test(`five random unskipped rounds at ${width}px with animation lifecycle monitoring`, async ({
+    page,
+  }) => {
+    test.setTimeout(240000);
+    await page.setViewportSize({ width, height: 900 });
+    const errors: string[] = [];
+    page.on('pageerror', (error) => errors.push(error.message));
+    await page.goto('/?debug=1');
+    await page.getByRole('button', { name: 'FAST MODE' }).click();
+    await page.evaluate(() => {
+      const original = Element.prototype.animate;
+      const state = { interrupted: 0, overlap: 0, moves: 0, activeGravity: 0 };
+      Object.assign(window, { animationAudit: state });
+      Element.prototype.animate = function (...args) {
+        const animation = original.apply(this, args);
+        if (!this.classList.contains('jelly-position')) return animation;
+        state.moves++;
+        const gravity = !!this.closest('.phase-falling');
+        if (this.closest('.phase-refilling') && state.activeGravity) state.overlap++;
+        if (gravity) state.activeGravity++;
+        animation.finished.then(
+          () => {
+            if (gravity) state.activeGravity--;
+          },
+          () => {
+            state.interrupted++;
+            if (gravity) state.activeGravity--;
+          },
+        );
+        return animation;
+      };
+    });
+    for (let round = 0; round < 5; round++) {
+      await page.getByRole('button', { name: /START EXPERIMENT/ }).click();
+      if (round === 0) {
+        await expect(page.locator('.phase-spawning')).toBeVisible();
+        await page.getByRole('button', { name: 'FAST MODE' }).click();
+        await page.getByRole('button', { name: 'FAST MODE' }).click();
+      }
+      await expect(page.getByRole('dialog', { name: 'EXPERIMENT COMPLETE' })).toBeVisible({
+        timeout: 85000,
+      });
+      await page.getByRole('button', { name: 'CLOSE · 關閉' }).click();
+    }
+    expect(
+      await page.evaluate(
+        () =>
+          (window as unknown as { animationAudit: { interrupted: number } }).animationAudit
+            .interrupted,
+      ),
+    ).toBe(0);
+    expect(
+      await page.evaluate(
+        () => (window as unknown as { animationAudit: { overlap: number } }).animationAudit.overlap,
+      ),
+    ).toBe(0);
+    expect(
+      await page.evaluate(
+        () => (window as unknown as { animationAudit: { moves: number } }).animationAudit.moves,
+      ),
+    ).toBeGreaterThanOrEqual(180);
+    await expect(page.getByTestId('plays')).toHaveText('05');
+    expect(errors).toEqual([]);
+  });
+}
+
+test('normal-speed gravity keeps DOM identity, finishes before refill and moves continuously', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 900 });
+  await page.goto('/?debug=1');
+  await page.getByRole('button', { name: 'FORCE LARGE CLUSTER', exact: true }).click();
+  await page.waitForFunction(() =>
+    document
+      .querySelector('.phase-falling')
+      ?.getAnimations({ subtree: true })
+      .some(
+        (a) =>
+          (a.effect as KeyframeEffect)?.target instanceof Element &&
+          ((a.effect as KeyframeEffect).target as Element).classList.contains('jelly-position'),
+      ),
+  );
+  const observation = await page.evaluate(async () => {
+    const root = document.querySelector('.phase-falling')!;
+    const animations = root
+      .getAnimations({ subtree: true })
+      .filter((a) =>
+        ((a.effect as KeyframeEffect).target as Element)?.classList.contains('jelly-position'),
+      );
+    const nodes = Array.from(root.querySelectorAll<HTMLElement>('.jelly-position'));
+    const moving = (animations[0].effect as KeyframeEffect).target as HTMLElement;
+    const start = moving.getBoundingClientRect().y;
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    const middle = moving.getBoundingClientRect().y;
+    await Promise.all(animations.map((a) => a.finished));
+    const end = moving.getBoundingClientRect().y;
+    return {
+      start,
+      middle,
+      end,
+      stable: nodes.every(
+        (node) => root.querySelector('[data-cell-id="' + node.dataset.cellId + '"]') === node,
+      ),
+    };
+  });
+  expect(observation.stable).toBe(true);
+  expect(observation.middle).toBeGreaterThan(observation.start);
+  expect(observation.end).toBeGreaterThan(observation.start);
+  await page.screenshot({ path: 'test-results/mobile-gravity-390.png', fullPage: true });
+  await expect(page.getByRole('dialog')).toBeVisible({ timeout: 65000 });
 });

@@ -65,7 +65,13 @@ export function runRound(rng: RandomSource, initial?: Board): RoundResult {
   };
   emit('ROUND_START', 'starting');
   collectBonus();
-  emit('SPAWN', 'spawning');
+  emit('SPAWN', 'spawning', {
+    movements: board.flatMap((row, r) =>
+      row.flatMap((cell, col) =>
+        cell ? [{ id: cell.id, from: { row: r - C.rows, col }, to: { row: r, col } }] : [],
+      ),
+    ),
+  });
   while (cascade < C.maxCascades) {
     const clusters = findClusters(board),
       fires: Position[] = [];
@@ -96,11 +102,9 @@ export function runRound(rng: RandomSource, initial?: Board): RoundResult {
     for (const cluster of clusters) {
       const size = cluster.positions.length;
       const symbol =
-        size >= C.specialSpawn.wildMinClusterSize && rng.next() < C.specialSpawn.wildChance
-          ? 'wild'
-          : size === C.specialSpawn.fireClusterSize && rng.next() < C.specialSpawn.fireChance
-            ? 'fire'
-            : null;
+        size >= C.specialSpawn.fireMinClusterSize && rng.next() < C.specialSpawn.fireChance
+          ? 'fire'
+          : null;
       // Bottom-most, then left-most normal cell. New instance survives this stage's removal.
       if (symbol) {
         const candidates = cluster.positions

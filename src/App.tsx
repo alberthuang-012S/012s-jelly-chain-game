@@ -129,7 +129,7 @@ export default function App() {
               <small>累積體驗點數</small>
             </div>
           </div>
-          <Board event={event} fast={player.fastMode} reducedMotion={game.reducedMotion} />
+          <Board event={event} frame={game.frame} />
           <div className="reaction-status" role="status" aria-live="polite" aria-atomic="true">
             <span>
               <i className={`live-dot ${busy ? 'reacting' : ''}`} />

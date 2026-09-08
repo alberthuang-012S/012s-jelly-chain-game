@@ -7,10 +7,9 @@ import { createHash } from 'node:crypto';
 const source = 'reference/jellyfish-3d-style-board.png';
 const bytes = await readFile(source);
 const regions = {
-  wild: [64, 172, 435, 454],
+  yellow: [64, 172, 435, 454],
   bonus: [548, 156, 464, 470],
   green: [1030, 194, 455, 432],
-  blue: [1530, 177, 477, 449],
   pink: [28, 799, 475, 448],
   aqua: [563, 799, 465, 448],
   purple: [1059, 793, 472, 454],
@@ -65,9 +64,16 @@ await writeFile(
       sha256: createHash('sha256').update(bytes).digest('hex'),
       output: '256x256 WebP, edge-connected background removed',
       regions,
+      semantics: {
+        yellow: {
+          category: 'normal',
+          sourceCrop: 'upper-left crown character',
+          priorDerivedAsset: 'wild.webp',
+        },
+      },
     },
     null,
     2,
   ) + '\n',
 );
-console.log('Derived eight independent 256×256 WebP assets. Source unchanged.');
+console.log('Derived seven independent 256×256 WebP assets. Source unchanged.');

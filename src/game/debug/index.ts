@@ -5,7 +5,7 @@ import { NORMAL_SYMBOLS, type Board, type SymbolId } from '../types';
 export const SCENARIOS = [
   'high-combo',
   'fire',
-  'wild',
+  'yellow-cluster',
   'bonus',
   'no-match',
   'large-cluster',
@@ -23,10 +23,10 @@ export function debugBoard(scenario: Scenario): Board {
     put(2, 2, 'fire');
     put(3, 3, 'fire');
   }
-  if (scenario === 'wild') {
-    put(0, 0, 'pink');
-    put(0, 1, 'pink');
-    put(0, 2, 'wild');
+  if (scenario === 'yellow-cluster') {
+    put(0, 0, 'yellow');
+    put(0, 1, 'yellow');
+    put(0, 2, 'yellow');
   }
   if (scenario === 'bonus') {
     put(0, 0, 'bonus');

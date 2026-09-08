@@ -1,52 +1,62 @@
-import { useEffect, useRef, type CSSProperties } from 'react';
+import { useLayoutEffect, useRef, type CSSProperties } from 'react';
 import { GAME_CONFIG as C } from '../game/config';
 import { comboLabel, comboMultiplier } from '../game/scoring';
 import { JELLY_SYMBOLS } from '../game/symbols';
+import type { Presentation } from '../game/presentation';
 import type { GameEvent } from '../game/types';
-export function Board({
-  event,
-  fast,
-  reducedMotion,
-}: {
-  event: GameEvent;
-  fast: boolean;
-  reducedMotion: boolean;
-}) {
-  const previous = useRef(event),
-    container = useRef<HTMLDivElement>(null);
+export function Board({ event, frame }: { event: GameEvent; frame: Presentation | null }) {
+  const container = useRef<HTMLDivElement>(null);
   const active = new Set(event.highlighted),
     created = new Set(event.created),
     triggered = new Set(event.triggered);
-  const factor =
-    (fast ? C.animation.fastFactor : 1) * (reducedMotion ? C.animation.reducedFactor : 1);
-  useEffect(() => {
-    if (previous.current === event) return;
-    previous.current = event;
+  const factor = frame?.factor ?? 1;
+  useLayoutEffect(() => {
     const root = container.current;
-    if (!root || reducedMotion) return;
+    if (!root || !frame) return;
+    let disposed = false;
     const animations: Animation[] = [];
+    const moves = new Map(event.movements.map((move) => [move.id, move]));
     for (const element of root.querySelectorAll<HTMLElement>('.jelly-position')) {
-      const cellId = element.dataset.cellId;
-      const movement = event.movements.find((m) => m.id === cellId);
-      if (movement) {
-        const distance = (movement.from.row - movement.to.row) * element.offsetHeight;
-        animations.push(
-          element.animate(
-            [
-              { transform: `translateY(${distance}px)` },
-              { transform: 'translateY(3px)', offset: 0.85 },
-              { transform: 'translateY(0)' },
-            ],
+      const move = moves.get(element.dataset.cellId!);
+      if (!move) continue;
+      const start = (move.from.row - move.to.row) * 100;
+      const delay =
+        frame.reduced || event.type === 'GRAVITY'
+          ? 0
+          : move.to.col * C.animation.columnStagger * factor;
+      const keyframes = frame.reduced
+        ? [{ transform: 'translate3d(0,' + start + '%,0)' }, { transform: 'translate3d(0,0,0)' }]
+        : [
+            { transform: 'translate3d(0,' + start + '%,0)', easing: 'cubic-bezier(.35,0,.8,.65)' },
             {
-              duration: C.animation[event.phase === 'falling' ? 'falling' : 'refilling'] * factor,
-              easing: 'cubic-bezier(.2,.7,.3,1)',
+              transform: 'translate3d(0,' + C.animation.landingOvershoot * 100 + '%,0)',
+              offset: 0.88,
             },
-          ),
-        );
-      }
+            { transform: 'translate3d(0,0,0)' },
+          ];
+      animations.push(
+        element.animate(keyframes, { duration: frame.duration, delay, fill: 'both' }),
+      );
     }
-    return () => animations.forEach((a) => a.cancel());
-  }, [event, factor, reducedMotion]);
+    let timer: number;
+    const hold = new Promise<void>((resolve) => {
+      timer = window.setTimeout(resolve, frame.duration);
+    });
+    void Promise.all([
+      hold,
+      ...animations.map((animation) => animation.finished.catch(() => undefined)),
+    ]).then(() => {
+      if (!disposed) {
+        animations.forEach((animation) => animation.cancel());
+        frame.done();
+      }
+    });
+    return () => {
+      disposed = true;
+      window.clearTimeout(timer);
+      animations.forEach((animation) => animation.cancel());
+    };
+  }, [event, frame, factor]);
   return (
     <div
       className={`chamber ${event.phase === 'popping' && event.cascade >= 5 ? 'fever-pulse' : ''}`}
@@ -73,7 +83,12 @@ export function Board({
             </div>
           ))}
         </div>
-        <div ref={container} className={`jellies phase-${event.phase}`} aria-hidden="true">
+        <div
+          ref={container}
+          className={`jellies phase-${event.phase}`}
+          style={{ visibility: event.phase === 'starting' ? 'hidden' : 'visible' }}
+          aria-hidden="true"
+        >
           {event.board.flatMap((row, r) =>
             row.map((cell, c) => {
               if (!cell) return null;
@@ -123,7 +138,7 @@ export function Board({
         )}
         {event.type === 'SPECIAL_TRIGGER' && (
           <div className="fire-flash" aria-hidden="true">
-            FIRE REACTION
+            {event.triggered.length > 1 ? 'FIRE CHAIN REACTION' : 'FIRE REACTION'}
           </div>
         )}
       </div>

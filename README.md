@@ -26,17 +26,11 @@ Phase 1 為完整可玩的本機體驗：React + TypeScript strict + Vite，獨�
 
 固定 6 rows × 6 columns。資料為 `Board = (Cell | null)[][]`，每顆 Cell 有唯一 instance ID、symbol ID、specialType 與 settled state。盤面狀態完全由引擎決定，UI 只呈現事件快照與移動座標。
 
-普通角色 5 種：pink、blue、green、purple、aqua。原圖有兩種不同藍色表情，保留原角色映射，沒有為了湊黃色 Normal 而改造皇冠角色。表情、配件、小字標記與 accessible name 均可用來辨認。
+普通角色 5 種：pink、yellow、green、purple、aqua。黃色皇冠是一般角色，標記 Y，只與同色相連，沒有特殊加成。表情、配件、小字標記與 accessible name 均可用來辨認。
 
 ## Cluster Match
 
 用 BFS 找出相同普通 Jelly 的上下左右 connected components。至少 3 顆即成立，L / T 型有效，斜角無效。多個獨立群組同一階段一起消除，彼此不合併；同一次扫描只算一個 cascade。
-
-### WILD assignment details
-
-先找 normal-only components，再將每顆 WILD 指派給直接相鄰的一個 component。比較依序為原始普通群組大小、固定 symbol priority（pink → blue → green → purple → aqua）、row-major component order。
-
-所有選擇均比較**加入 WILD 前**的大小，避免掃描順序造成結果漂移。WILD 不透過其他 WILD 擴散、不橋接兩個 components、不單獨形成群組。多顆直接相鄰同一普通群組的 WILD 可一起加入；同一 WILD 只計分一次。
 
 ## Cascade
 
@@ -70,17 +64,13 @@ Gravity 保留同欄倖存 Jelly 的順序及 instance ID，空格集中上方�
 
 ## FIRE Jelly
 
-5 顆群組有 30% 機率生成 FIRE。生成位置固定為群組中**最下方，再最左邊的普通 Jelly**；用新 ID 取代，並在該階段清除後放入，確保看得見。
+5 顆以上群組有 30% 機率生成 FIRE。生成位置固定為群組中**最下方，再最左邊的普通 Jelly**；用新 ID 取代，並在該階段清除後放入，確保看得見。
 
 **FIRE 在下一次 scan 自動引爆**，不用玩家點擊或等待另一個群組。清除自己和周圍 3×3，邊界裁切安全。碰到另一 FIRE 會加入 iterative queue；用 triggered instance ID Set 確保每顆每階段最多一次。新 FIRE 不受其生成階段的爆炸影響。
 
-## WILD Jelly
-
-6+ 顆群組有 20% 機率生成皇冠 WILD。生成位置規則與 FIRE 相同。加入普通群組的規則見上方 WILD assignment details；會在畫面呈現皇冠及 W 標記。
-
 ## BONUS Jelly
 
-月亮角色為 BONUS，spawn weight 0.7，五種普通角色各 20；自然生成總權重 100.7。FIRE/WILD 的自然生成權重為 0，只從有效群組生成。
+月亮角色為 BONUS，spawn weight 0.7，五種普通角色各 20；自然生成總權重 100.7。FIRE 的自然生成權重為 0，只從有效群組生成。
 
 BONUS **在出現在 initial / refill 盤面時收集**，用 instance ID 去重。每局只計一次；跨局保存，累積上限 3，達標顯示 BONUS READY。點擊月亮卡片開啟「BONUS MODE · Coming in Phase 2」。Phase 1 不重設已解鎖狀態、不發額外次數或獎品。
 
@@ -104,16 +94,16 @@ $50 / $100 / $200 優惠券、Jelly Gift、Limited Jelly，門檻分別為 500 /
 
 | 原圖位置                     | Production symbol |
 | ---------------------------- | ----------------- |
-| 上排左：皇冠黃 Jelly         | wild              |
+| 上排左：皇冠黃 Jelly         | yellow            |
 | 上排第二：月亮／枕頭紫 Jelly | bonus             |
 | 上排第三：放大鏡綠 Jelly     | green             |
-| 上排右：氣鼓鼓藍 Jelly       | blue              |
+| 上排右：氣鼓鼓藍 Jelly       | retired（不載入） |
 | 下排左：調色盤粉紅 Jelly     | pink              |
 | 下排第二：水瓶／淚眼藍 Jelly | aqua              |
 | 下排第三：嘆氣紫 Jelly       | purple            |
 | 下排右：火焰紅 Jelly         | fire              |
 
-衍生素材放在 `src/assets/jellies/`，8 張獨立 256×256 WebP，各約 12–18 KB，總計約 120 KB。只對裁切邊界相連的近白背景去背，保留角色內部奶白材質和配件。原圖沒有被覆寫，且不作為 runtime asset。
+衍生素材放在 `src/assets/jellies/`，7 張 runtime 獨立 256×256 WebP，各約 12–18 KB，總計約 105 KB。只對裁切邊界相連的近白背景去背，保留角色內部奶白材質和配件。原圖沒有被覆寫，且不作為 runtime asset。
 
 `pnpm assets` 執行 `scripts/derive-assets.mjs` 可重建衍生素材。裁切座標、來源雜湊和處理方式記錄於 `src/assets/jellies/provenance.json`。裁切資訊只在素材工具中存在，Engine 不依賴圖片座標。
 
@@ -173,9 +163,8 @@ pnpm format:check   # Prettier
 
 E2E 使用已安裝的 Google Chrome（`channel: chrome`），可用 `pnpm exec playwright install chrome` 安裝官方測試瀏覽器。測試 runner 會啟動 dev server，若同一 URL 已有 dev server 則重用。
 
-- `src/game/engine/engine.test.ts`：69 項，引擎核心、固定 seed、FIRE/WILD、同時消除、重力、上限；包含 100 局 invariant regression。
-- `src/storage/storage.test.ts`：20 項，損壞資料、無法寫入、play exhaustion、快速連點、重整結算、快轉結果不變。
-- `tests/game.spec.ts`：16 項，完整互動情境、6 個視窗寬度、音效、鍵盤、焦點與 axe。
+- Vitest 覆蓋引擎、五色群組、FIRE、重力、播放完成協調與舊存檔相容。
+- Playwright 覆蓋完整動畫、20 局隨機遊玩、各寬度、鍵盤與 axe。
 
 測試截圖、trace 與 HTML report 產生於 `test-results/` / `playwright-report/`，均不 commit。
 
@@ -186,13 +175,13 @@ pnpm build
 pnpm preview
 ```
 
-Production 輸出 `dist/`，使用相對 `base: './'`，可由靜態主機供應，不需 Node server。僅提供根路由，以 query 啟用 Debug。`dist/` 不 commit。這次交付為指定 GitHub repository 的原始碼，不包含正式官網部署。
+Production 輸出 `dist/`，使用相對 `base: './'`，可由靜態主機供應，不需 Node server。僅提供根路由，以 query 啟用 Debug。`dist/` 不 commit。GitHub Pages：[遊戲網站](https://alberthuang-012s.github.io/012s-jelly-chain-game/)。既有 deploy-pages.yml 使用 Node 24 建置及部署。
 
 ## Debug Mode
 
 加上 `?debug=1` 顯示面板，預設隱藏。
 
-`+10 PLAY`、`+1000 MOCK POINTS`、`RESET LOCAL DATA`、`FORCE HIGH COMBO / FIRE / WILD / BONUS / NO MATCH / LARGE CLUSTER`。
+`+10 PLAY`、`+1000 MOCK POINTS`、`RESET LOCAL DATA`、`FORCE HIGH COMBO / FIRE / YELLOW CLUSTER / BONUS / NO MATCH / LARGE CLUSTER`。
 
 FORCE 透過 Engine / Debug Board Provider 啟動真正的一局並扣 1 PLAY；不是直接修改畫面。HIGH COMBO 用重複 RNG 可確定達 20 次上限，建議 Fast 或 Skip 檢查。其餘情境使用固定 seed。執行中不能修改 Debug 資料。Reset 只重設此遊戲的 localStorage key，不清除其他網站資料。
 
@@ -210,7 +199,7 @@ Key：`jelly_chain_game_v1`，envelope：`{ version: 1, stats: ... }`。
 
 真實 button、accessible name、焦點外框、棋盤逐格角色描述、可切換音效與 `aria-live` 狀態。角色不只靠颜色：表情、配件與字母標记也不同。
 
-原生 dialog 搭配 Tab / Shift+Tab 邊界循環、Escape 關閉、開啟／切換視窗時聚焦，以及關閉後恢復原控制焦點。`prefers-reduced-motion` 關閉 bounce、shake、particles、scale 和 WAAPI 掉落，保留流程與結果。FAST MODE 只改時間；Animation、Sound 都不決定遊戲結果。
+原生 dialog 搭配 Tab / Shift+Tab 邊界循環、Escape 關閉、開啟／切換視窗時聚焦，以及關閉後恢復原控制焦點。`prefers-reduced-motion` 關閉 bounce、shake、particles、scale ，保留簡短的 WAAPI 位移、流程與結果。FAST MODE 只改時間；Animation、Sound 都不決定遊戲結果。
 
 自動驗證 320 / 375 / 390 / 430 / 768 / 1440px，包含橫向 overflow、36 格、素材載入與手機第一屏按鈕。這是桌面 Chromium 視窗模擬；iOS Safari 和 Android 實機仍需下一輪裝置驗證。
 
@@ -230,3 +219,9 @@ Key：`jelly_chain_game_v1`，envelope：`{ version: 1, stats: ... }`。
 下一階段由 **012s-activity-platform** 管理 Authentication、SLOT_SPIN 驗證與扣除、Idempotency-Key、權威 RNG、Game Result、正式 POINTS、Activity Ledger 及 Reward Redemption。Server 需決定結果、保存交易和 ledger，回傳可驗證的事件資料；前端只播放，不能沿用本機 Mock conversion 當正式資產規則。
 
 請先定義 server result schema 與 runtime validation、timeout / retry / idempotency recovery，再串接端點；不要讓 UI import URL 或會員 secret。
+
+## Drop Playback / Compatibility
+
+圖片在扣 PLAY 前完成 decode。Board 使用 useLayoutEffect 在繪製前設定百分比 translate3d，保留 cell ID 與 DOM，免除整數高度誤差。各階段由實際動畫 finished 回報完成，gravity 全部落定才 refill；新補角色從盤面上方進場，各欄微錯開。Fast 設定只影響下一階段，當前動畫不取消。Skip / unmount 解除等待並清理動畫。Reduced motion 保留短位移但不回彈。
+
+儲存格式仍為 version 1，只儲存統計與設定，從未持久化 board 或 pending result。舊存檔額外夾帶的已退役角色資料會被忽略，合法 PLAY、分數、點數與偏好完整保留。新盤面只由目前七種角色產生。

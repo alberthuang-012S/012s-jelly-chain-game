@@ -18,7 +18,7 @@ export function ResultContent({
       <div className="result-art">
         <span />
         <img
-          src={JELLY_SYMBOLS[result.cascades >= 5 ? 'wild' : 'pink'].asset}
+          src={JELLY_SYMBOLS[result.cascades >= 5 ? 'yellow' : 'pink'].asset}
           alt="實驗完成 Jelly"
         />
       </div>
@@ -95,7 +95,7 @@ export function HowToPlay() {
         </li>
       </ol>
       <div className="guide-symbols">
-        {(['fire', 'wild', 'bonus'] as const).map((id) => (
+        {(['fire', 'bonus'] as const).map((id) => (
           <div key={id}>
             <img src={JELLY_SYMBOLS[id].asset} alt={JELLY_SYMBOLS[id].displayName} />
             <div>
@@ -106,8 +106,7 @@ export function HowToPlay() {
         ))}
       </div>
       <p className="guide-note">
-        5 隻群組有 30% 機率生成 FIRE；6 隻以上有 20% 機率生成 WILD。WILD
-        選相鄰最大普通群組，同大小依粉紅 → 藍 → 綠 → 紫 → 水藍決定；不透過其他 WILD 連接。
+        5 隻以上群組有 30% 機率生成 FIRE。黃色皇冠 Jelly 是普通角色，只與相同黃色 Jelly 連接。
       </p>
       <p className="guide-note">
         3／4／5／6／7 隻基本分數為 30／60／120／200／300，之後每多一隻 +100。FIRE 額外清除的每格為

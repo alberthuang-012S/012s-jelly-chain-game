@@ -123,16 +123,16 @@ describe('orthogonal cluster detection', () => {
           [0, 0, 'pink'],
           [0, 1, 'pink'],
           [0, 2, 'pink'],
-          [5, 0, 'blue'],
-          [5, 1, 'blue'],
-          [5, 2, 'blue'],
+          [5, 0, 'yellow'],
+          [5, 1, 'yellow'],
+          [5, 2, 'yellow'],
         ]),
       ),
     ).toHaveLength(2));
   it('36 cell cluster terminates', () =>
     expect(findClusters(generateBoard({ next: () => 0.01 }))[0].positions).toHaveLength(36));
   it('special symbols never match normally', () => {
-    for (const special of ['fire', 'wild', 'bonus'] as const)
+    for (const special of ['fire', 'bonus'] as const)
       expect(
         findClusters(
           pattern(
@@ -147,79 +147,11 @@ describe('orthogonal cluster detection', () => {
       ).toEqual([]);
   });
 });
-describe('wild ownership', () => {
-  it('wild completes a pair', () =>
-    expect(
-      findClusters(
-        fixture([
-          [0, 0, 'pink'],
-          [0, 1, 'pink'],
-          [0, 2, 'wild'],
-        ]),
-      )[0].positions,
-    ).toHaveLength(3));
-  it('largest original component wins', () => {
-    const board = fixture([
-      [1, 1, 'wild'],
-      [1, 0, 'pink'],
-      [0, 0, 'pink'],
-      [1, 2, 'blue'],
-      [1, 3, 'blue'],
-      [1, 4, 'blue'],
-    ]);
-    expect(findClusters(board)).toMatchObject([
-      { symbol: 'blue', positions: expect.arrayContaining([{ row: 1, col: 1 }]) },
-    ]);
-  });
-  it('ties use fixed symbol priority', () => {
-    const board = fixture([
-      [1, 1, 'wild'],
-      [1, 0, 'pink'],
-      [0, 0, 'pink'],
-      [1, 2, 'blue'],
-      [1, 3, 'blue'],
-    ]);
-    expect(findClusters(board).map((c) => c.symbol)).toEqual(['pink']);
-  });
-  it('same-color size ties use row-major component priority', () => {
-    const board = fixture([
-      [1, 1, 'wild'],
-      [1, 0, 'pink'],
-      [0, 0, 'pink'],
-      [1, 2, 'pink'],
-      [1, 3, 'pink'],
-    ]);
-    expect(findClusters(board)[0].positions).toContainEqual({ row: 0, col: 0 });
-    expect(findClusters(board)[0].positions).not.toContainEqual({ row: 1, col: 3 });
-  });
-  it('wild chains cannot propagate ownership', () => {
-    expect(
-      findClusters(
-        fixture([
-          [0, 0, 'pink'],
-          [0, 1, 'wild'],
-          [0, 2, 'wild'],
-        ]),
-      ),
-    ).toEqual([]);
-  });
-  it('many wilds terminate without duplicate membership', () => {
-    const board = generateBoard({ next: () => 0.01 });
-    const make = cellFactory('wild');
-    board.forEach((row, r) =>
-      row.forEach((_, c) => {
-        if ((r + c) % 2) board[r][c] = make('wild');
-      }),
-    );
-    const ids = findClusters(board).flatMap((c) => c.positions.map((p) => board[p.row][p.col]!.id));
-    expect(new Set(ids).size).toBe(ids.length);
-  });
-});
 describe('gravity and refill', () => {
   it('compacts multiple holes preserving order and instance IDs', () => {
     const board = fixture([
         [0, 0, 'pink'],
-        [2, 0, 'blue'],
+        [2, 0, 'yellow'],
         [4, 0, 'green'],
       ]),
       before = structuredClone(board);
@@ -229,7 +161,7 @@ describe('gravity and refill', () => {
       null,
       null,
       'pink',
-      'blue',
+      'yellow',
       'green',
     ]);
     expect(result.board[3][0]!.id).toBe(board[0][0]!.id);
@@ -311,11 +243,11 @@ describe('fire', () => {
     expect(new Set(result.triggered).size).toBe(2);
     expect(result.cleared).toHaveLength(14);
   });
-  it('empty neighbors are safe and wilds do not chain explode', () => {
+  it('empty neighbors are safe and bonuses do not chain explode', () => {
     const result = expandFire(
       fixture([
         [0, 0, 'fire'],
-        [1, 1, 'wild'],
+        [1, 1, 'bonus'],
       ]),
       [{ row: 0, col: 0 }],
     );
@@ -380,9 +312,9 @@ describe('deterministic round timeline', () => {
       [0, 0, 'pink'],
       [0, 1, 'pink'],
       [0, 2, 'pink'],
-      [5, 0, 'blue'],
-      [5, 1, 'blue'],
-      [5, 2, 'blue'],
+      [5, 0, 'yellow'],
+      [5, 1, 'yellow'],
+      [5, 2, 'yellow'],
     ]);
     const result = runRound(new SeededRandom(1), board);
     expect(result.events.find((e) => e.type === 'POP')).toMatchObject({
@@ -405,4 +337,85 @@ describe('deterministic round timeline', () => {
       if (!round.summary.capped) expect(findClusters(round.finalBoard)).toEqual([]);
     }
   });
+});
+
+it.each(['yellow', 'pink', 'green', 'purple', 'aqua'] as const)(
+  '%s matches horizontal, vertical, L, T and large shapes identically',
+  (symbol) => {
+    for (const coords of [
+      [
+        [0, 0],
+        [0, 1],
+        [0, 2],
+      ],
+      [
+        [0, 0],
+        [1, 0],
+        [2, 0],
+      ],
+      [
+        [0, 0],
+        [1, 0],
+        [1, 1],
+      ],
+      [
+        [0, 0],
+        [0, 1],
+        [0, 2],
+        [1, 1],
+      ],
+      [
+        [0, 0],
+        [0, 1],
+        [0, 2],
+        [1, 0],
+        [1, 1],
+        [1, 2],
+      ],
+    ]) {
+      const clusters = findClusters(pattern(coords, symbol));
+      expect(clusters).toHaveLength(1);
+      expect(clusters[0].positions).toHaveLength(coords.length);
+    }
+  },
+);
+it('all initial, intermediate and final boards contain only current symbols; created specials are FIRE', () => {
+  const allowed = new Set(['pink', 'yellow', 'green', 'purple', 'aqua', 'fire', 'bonus']);
+  let created = 0;
+  for (let seed = 0; seed < 1000; seed++) {
+    const round = runRound(new SeededRandom(seed));
+    for (const event of round.events) {
+      expect(event.board.flat().every((c) => !c || allowed.has(c.symbol))).toBe(true);
+      for (const id of event.created) {
+        expect(event.board.flat().find((c) => c?.id === id)?.symbol).toBe('fire');
+        created++;
+      }
+    }
+  }
+  expect(created).toBeGreaterThan(0);
+});
+
+it.each([1, 3])('falls exactly %i rows in one column without changing identities', (holes) => {
+  const board = debugBoard('no-match');
+  for (let r = 6 - holes; r < 6; r++) board[r][2] = null;
+  const result = gravity(board);
+  expect(result.movements).toHaveLength(6 - holes);
+  for (const move of result.movements) {
+    expect(move.to.row - move.from.row).toBe(holes);
+    expect(move.to.col).toBe(2);
+    expect(result.board[move.to.row][move.to.col]?.id).toBe(
+      board[move.from.row][move.from.col]?.id,
+    );
+  }
+});
+it('multiple columns fall independently before refill adds new instances', () => {
+  const board = debugBoard('no-match');
+  for (let col = 0; col < 6; col++)
+    for (let r = 6 - ((col % 3) + 1); r < 6; r++) board[r][col] = null;
+  const fallen = gravity(board);
+  expect(new Set(fallen.movements.map((m) => m.to.col)).size).toBe(6);
+  const filled = refill(fallen.board, new SeededRandom(9), cellFactory('new'));
+  for (const move of fallen.movements)
+    expect(filled.board[move.to.row][move.to.col]?.id).toBe(move.id);
+  expect(filled.movements.every((m) => m.from.row < 0)).toBe(true);
 });

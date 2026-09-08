@@ -6,7 +6,7 @@ export const REWARDS = [
   { name: '$100 優惠券', points: 1000, symbol: 'aqua' },
   { name: '$200 優惠券', points: 2000, symbol: 'purple' },
   { name: 'Jelly Gift', points: 3000, symbol: 'green' },
-  { name: 'Limited Jelly', points: 5000, symbol: 'wild' },
+  { name: 'Limited Jelly', points: 5000, symbol: 'yellow' },
 ] as const;
 export function RewardProgress({ points, onOpen }: { points: number; onOpen: () => void }) {
   const next = REWARDS.find((reward) => reward.points > points) ?? REWARDS.at(-1)!;
@@ -18,7 +18,7 @@ export function RewardProgress({ points, onOpen }: { points: number; onOpen: () 
       <div className="reward-visual">
         <span className="orbit orbit-one" />
         <span className="orbit orbit-two" />
-        <img src={JELLY_SYMBOLS.wild.asset} alt="皇冠 Jelly" />
+        <img src={JELLY_SYMBOLS.yellow.asset} alt="皇冠 Jelly" />
         <span className="reward-sticker">
           A LITTLE
           <br />

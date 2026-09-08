@@ -1,5 +1,4 @@
-export type SoundEvent =
-  'start' | 'drop' | 'match' | 'pop' | 'combo' | 'fire' | 'wild' | 'bonus' | 'result';
+export type SoundEvent = 'start' | 'drop' | 'match' | 'pop' | 'combo' | 'fire' | 'bonus' | 'result';
 const tones: Record<SoundEvent, number[]> = {
   start: [392, 523, 659],
   drop: [260],
@@ -7,7 +6,6 @@ const tones: Record<SoundEvent, number[]> = {
   pop: [740, 988],
   combo: [659, 784, 988],
   fire: [130, 196, 260],
-  wild: [784, 988, 1175],
   bonus: [659, 880, 1318],
   result: [523, 659, 784, 1046],
 };

@@ -548,18 +548,11 @@ button svg {
   background: #ece4fa;
   color: #7650bb;
 }
-.symbol-wild {
-  box-shadow: inset 0 0 16px #f4d47740;
-}
 .symbol-bonus {
   box-shadow: inset 0 0 16px #bca0e232;
 }
 .symbol-fire {
   box-shadow: inset 0 0 16px #edb19c60;
-}
-.phase-spawning .jelly {
-  animation: initial-drop calc(0.56s * var(--speed)) cubic-bezier(0.22, 0.8, 0.35, 1.03) both;
-  animation-delay: calc((var(--column) * 0.04s + var(--row) * 0.012s) * var(--speed));
 }
 .phase-matching .is-matched {
   background: #ffffff96;
@@ -1444,20 +1437,6 @@ progress::-moz-progress-bar {
   font-size: 12px;
 }
 
-@keyframes initial-drop {
-  0% {
-    transform: translateY(-550%);
-    opacity: 0;
-  }
-  75% {
-    transform: translateY(3%) scaleY(0.96);
-    opacity: 1;
-  }
-  100% {
-    transform: translateY(0);
-    opacity: 1;
-  }
-}
 @keyframes match-glow {
   0% {
     transform: scale(1);

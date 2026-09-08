@@ -1,49 +1,57 @@
-# Phase 1 validation record
+# Phase 1 finalization validation record
 
-Date: 2026-09-07. Windows, Node 24.19.0, pnpm 11.19.0, Chrome / Chromium.
+Date: 2026-09-08. Windows, Node 24.19.0, pnpm 11.19.0, installed Chrome.
+
+## Starting state
+
+Existing main at d8bd12b76ab8a2da6d406f96b9427b289b8dc7bf; clean worktree and matching origin/main. Existing Pages workflow retained, including Node 24 and relative Vite base.
 
 ## Core verification
 
-`pnpm test` covers 89 tests in 2 files: 69 engine and scoring tests, 20 storage and service tests. These include 100 seeded round invariant checks in addition to explicit scenarios. `pnpm typecheck` uses strict TypeScript. `pnpm build` produces a static Vite bundle.
+Frozen installation, strict typecheck and production build pass. Vitest: 94 tests in 3 files (72 engine, 21 storage/service, 1 playback coordination). Coverage includes five-color horizontal / vertical / L / T / large clusters, FIRE chains, stable gravity IDs, refill sources, 1,000 seeded intermediate-board symbol checks, single settlement, cancellation and legacy payloads.
 
 ## Browser regression
 
-`pnpm test:e2e` contains 16 tests in `tests/game.spec.ts`:
+22 tests in tests/game.spec.ts cover:
 
-- One-play deduction, disabled start, high-combo skip, persisted awards and sound / fast settings.
-- Full animation playback for FIRE, WILD, BONUS, NO MATCH and LARGE CLUSTER.
-- Reward preview without point deduction; dialog Tab cycling and Escape focus restoration.
-- Zero plays, corrupted storage fallback, hidden debug and reloading during playback.
-- 320 / 375 / 390 / 430 / 768 / 1440px board boundaries, all 36 cells, loaded images and no horizontal overflow.
-- Start button within the 780px-high first viewport for all tested phone widths.
-- Reduced motion and keyboard-only play.
-- axe WCAG 2 A / AA and WCAG 2.1 AA checks on the main surface and result; mobile shop, guide and bonus dialogs. Checks wait for finite dialog entrance animation to settle.
+- Duplicate-start prevention, one PLAY deduction, skip and reload settlement.
+- Full FIRE, YELLOW CLUSTER, BONUS, NO MATCH, LARGE CLUSTER and HIGH COMBO timelines.
+- Shop preview without spending, dialogs, focus restoration, keyboard play and axe accessibility checks.
+- Responsive widths 320 / 375 / 390 / 430 / 768 / 1440, 36 cells, decoded images and overflow.
+- Twenty random rounds, unskipped, five each at 375 / 390 / 430 / 1440 pixels; animation lifecycle instrumentation detects premature cancellation and gravity/refill overlap, including Fast toggles during spawning.
+- Normal-speed 390px gravity samples intermediate movement and checks surviving DOM identity.
 
-The console and page-error collection in the complete-round test includes sound unlock, skip and reload. Image checks cover all board assets. The bundled font and explicit game favicon avoid external font dependencies and favicon 404s.
+This is Chrome viewport emulation, not physical iOS / Android certification. Browser-driven random play is separate from the 1,000 pure-engine simulations. Screenshots, traces and reports remain ignored. An initial overlapping test invocation caused artifact-directory ENOENT errors; the final verification uses a separate output directory.
 
-The tests create local screenshots and failure traces under ignored `test-results/` and `playwright-report/`; they are not production assets. Viewport screenshots have been visually inspected for composition and Jelly legibility. Responsive testing is browser viewport emulation, not a claim of physical iPhone / Android coverage.
+## Drop root cause and fix
 
-## Balance observation
+The old renderer applied reverse transforms in a passive effect after painting the final position, measured rounded offsetHeight, and raced a hook timer against actual animation startup. Fast changes cancelled in-flight animations without restarting them. Initial spawn briefly displayed the settled snapshot first; reduced motion skipped all movement.
 
-`pnpm balance`, deterministic seeds 0–999:
+The renderer now starts percentage translate3d animations in useLayoutEffect before paint, uses stable cell keys, captures speed per stage, and acknowledges actual completion through PlaybackGate. Gravity completes before refill mounts. Spawn/refill receive small column delays, accelerated descent and a 2.5% cell-height landing overshoot. Reduced motion keeps short translations without bounce. Assets decode before PLAY is consumed. Skip and unmount cancel outstanding playback safely; there are no per-frame React updates or layout reads in animation playback.
 
-| Metric                           | Result        |
-| -------------------------------- | ------------- |
-| Rounds                           | 1,000         |
-| No-match rounds                  | 0             |
-| Safety-cap rounds                | 6 (0.6%)      |
-| Mean cascades                    | 5.56          |
-| Mean score                       | 1,524.999     |
-| Normal animation median          | 12.06 seconds |
-| Normal animation 90th percentile | 25.36 seconds |
-| Longest animation                | 48.5 seconds  |
+## Balance: seeds 0–999
 
-Durations sum configured event delays; they exclude browser scheduling overhead. Fast mode uses 55% of normal delays, and skip completes the predetermined result immediately. A higher-cascade tail is expected and remains bounded by 20 cascades.
+| Metric                                  | Result                        |
+| --------------------------------------- | ----------------------------- |
+| Rounds                                  | 1,000                         |
+| No-match rate                           | 0%                            |
+| Average / median cascades               | 5.747 / 5                     |
+| High cascade rate (6+)                  | 40.9%                         |
+| Average score                           | 1,636.169                     |
+| Score P50 / P90                         | 741 / 4,408                   |
+| FIRE triggers per round                 | 0.502                         |
+| BONUS encounter rate                    | 41.6%                         |
+| Safety-cap rate                         | 0.8%                          |
+| Normal animation median / P90 / maximum | 12.78 / 28.54 / 52.76 seconds |
 
-## Assets and scope
+Durations are configured stage durations plus maximum column stagger, excluding browser scheduling. The median is approachable; the long tail remains bounded by 20 cascades and supports Fast / Skip. FIRE is generated by any 5+ cluster with 30% probability; scoring is unchanged. No-match is valid and debug-tested even though none occurred in this sample.
 
-The original `reference/jellyfish-3d-style-board.png` remains unchanged, SHA-256 `6da26ad0f01ad730eb52e7d360fa7c9641103ccfca6ed0859b1985dbe20a5ee2`.
+## Assets and storage
 
-Eight independent 256×256 WebP derivatives total 119,956 bytes. Production references the derivatives through a central registry; no runtime access to the original reference board.
+Seven runtime WebP images total approximately 104 KB. Crown yellow is copied from the existing derivative; provenance retains its source crop and prior filename for traceability. Retired derivatives remain unused and do not enter dist. The reference SHA-256 remains 6da26ad0f01ad730eb52e7d360fa7c9641103ccfca6ed0859b1985dbe20a5ee2.
 
-No real member assets, redemption, API, credentials, cloud database or other repository are used. The local store is a single-tab mock and is deliberately replaceable by a server-authoritative GameService in Phase 2.
+Storage version 1 persists only validated scalar statistics and preferences. Legacy extra board/pending data is ignored; no blanket reset or conversion of earned points occurs. The registry and runtime union contain exactly five normals and FIRE/BONUS. No retired wildcard mechanic remains in current player-facing documentation or code.
+
+Phase 1 remains a single-tab local mock. Official member assets, redemption and server authority belong to Phase 2.
+
+Final local run: all 22 E2E tests PASS (5.3 minutes); zero interrupted movement animations and zero gravity/refill overlap in the 20 random rounds. Normal-speed DOM identity and continuous movement assertions PASS. An additional in-app browser round completed normally with 6 cascades, 993 score and +9 mock points, preserving the prior stored record. No game console errors were observed. Install, 94 unit tests, typecheck, build, formatting and balance all PASS.

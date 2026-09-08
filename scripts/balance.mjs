@@ -20,7 +20,10 @@ try {
             sum +
             (event.type === 'SPECIAL_CREATED'
               ? config.animation.matching
-              : (config.animation[event.phase] ?? 0)),
+              : (config.animation[event.phase] ?? 0) +
+                (['SPAWN', 'REFILL'].includes(event.type)
+                  ? 5 * config.animation.columnStagger
+                  : 0)),
           0,
         ) / 1000,
     )
@@ -34,6 +37,22 @@ try {
         cappedRounds: rounds.filter((round) => round.summary.capped).length,
         averageCascades: mean('cascades'),
         averageScore: mean('score'),
+        noMatchPercent: rounds.filter((r) => !r.summary.matches).length / 10,
+        medianCascades: rounds.map((r) => r.summary.cascades).sort((a, b) => a - b)[499],
+        highCascadePercent: rounds.filter((r) => r.summary.cascades >= 6).length / 10,
+        scoreP50: rounds.map((r) => r.summary.score).sort((a, b) => a - b)[499],
+        scoreP90: rounds.map((r) => r.summary.score).sort((a, b) => a - b)[899],
+        fireTriggersPerRound:
+          rounds.reduce(
+            (n, r) =>
+              n +
+              r.events
+                .filter((e) => e.type === 'SPECIAL_TRIGGER')
+                .reduce((a, e) => a + e.triggered.length, 0),
+            0,
+          ) / 1000,
+        bonusEncounterPercent: rounds.filter((r) => r.summary.bonusCollected > 0).length / 10,
+        cappedPercent: rounds.filter((r) => r.summary.capped).length / 10,
         normalAnimationSeconds: {
           median: durations[500],
           p90: durations[900],
