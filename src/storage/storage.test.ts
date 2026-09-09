@@ -33,6 +33,39 @@ describe('versioned storage', () => {
     });
     expect(new PlayerStore(port).read()).toEqual(store.read());
   });
+  it('starts a fresh session with ten plays while preserving progress and settings', () => {
+    const port = memory();
+    const store = new PlayerStore(port);
+    store.write({
+      ...defaultStats(),
+      plays: 2,
+      totalScore: 1200,
+      mockPoints: 12,
+      highestRoundScore: 600,
+      highestCombo: 3,
+      totalGames: 4,
+      totalCascades: 9,
+      totalMatches: 11,
+      bonusProgress: 2,
+      soundEnabled: true,
+      fastMode: true,
+    });
+    expect(store.beginSession()).toEqual({
+      ...defaultStats(),
+      plays: 10,
+      totalScore: 1200,
+      mockPoints: 12,
+      highestRoundScore: 600,
+      highestCombo: 3,
+      totalGames: 4,
+      totalCascades: 9,
+      totalMatches: 11,
+      bonusProgress: 2,
+      soundEnabled: true,
+      fastMode: true,
+    });
+    expect(new PlayerStore(port).read().plays).toBe(10);
+  });
   it('unavailable or full storage falls back to memory', () => {
     const store = new PlayerStore({
       getItem: () => {

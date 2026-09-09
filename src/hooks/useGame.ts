@@ -32,7 +32,7 @@ const soundFor: Partial<Record<GameEvent['type'], SoundEvent>> = {
 export function useGame() {
   const [service] = useState(() => new LocalGameService(new PlayerStore(browserStorage())));
   const [audio] = useState(() => new AudioManager());
-  const [player, setPlayer] = useState(() => service.readPlayer());
+  const [player, setPlayer] = useState(() => service.store.beginSession());
   const [event, setEvent] = useState(initialEvent);
   const [frame, setFrame] = useState<Presentation | null>(null);
   const [starting, setStarting] = useState(false);

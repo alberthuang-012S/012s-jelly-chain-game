@@ -10,6 +10,8 @@ Phase 1 為完整可玩的本機體驗：React + TypeScript strict + Vite，獨�
 
 每個新瀏覽器存檔有 10 PLAY。啟動一局消耗 1 PLAY，生成盤面後自動處理所有連鎖，最後顯示 SCORE、倍率、CASCADES、MATCHES 和 MOCK POINTS。0 PLAY 時無法啟動；不會出現負數。沒有連鎖也是合法的 Small Reaction。
 
+目前 Phase 1 暫時採用 session 規則：每次重新開啟頁面都補回 10 PLAY；累計分數、點數、實驗紀錄與 sound／fast 偏好會保留。單一頁面內每局仍只消耗 1 PLAY。
+
 ## Controls
 
 | 控制                                     | 行為                                           |
@@ -192,6 +194,8 @@ Key：`jelly_chain_game_v1`，envelope：`{ version: 1, stats: ... }`。
 保存 plays、totalScore、mockPoints、highestRoundScore、highestCombo、totalGames、totalCascades、totalMatches、bonusProgress、soundEnabled、fastMode。驗證數字類型、有限值、非負、整數欄位及 Boolean；壞資料／未知 version 安全回到 defaults。讀寫被封鎖則改用記憶體並顯示提示。
 
 每局先產生完整 `RoundResult`，用**單一次寫入**一起記錄 play 消耗及所有結算結果，再播放。中途 reload 不會遺失獎勵或重複入帳；reload 後回到 idle，前一局結果視窗不重播。畫面中的累積點數於動畫完成才更新。這只是 local mock checkpoint，不是正式 ledger 或安全交易機制。
+
+頁面建立新的 session 時，會將已保存的 `plays` 暫時設回 `10`，其餘統計與設定欄位維持原值。
 
 同一分頁用同步 lock 保護 start；多分頁、跨裝置同步及防竄改不在 Phase 1 範圍，請使用單一分頁體驗。
 

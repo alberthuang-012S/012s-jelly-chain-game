@@ -8,7 +8,7 @@ Existing main at d8bd12b76ab8a2da6d406f96b9427b289b8dc7bf; clean worktree and ma
 
 ## Core verification
 
-Frozen installation, strict typecheck and production build pass. Vitest: 94 tests in 3 files (72 engine, 21 storage/service, 1 playback coordination). Coverage includes five-color horizontal / vertical / L / T / large clusters, FIRE chains, stable gravity IDs, refill sources, 1,000 seeded intermediate-board symbol checks, single settlement, cancellation and legacy payloads.
+Frozen installation, strict typecheck and production build pass. Vitest: 95 tests in 3 files (72 engine, 22 storage/service, 1 playback coordination). Coverage includes five-color horizontal / vertical / L / T / large clusters, FIRE chains, stable gravity IDs, refill sources, 1,000 seeded intermediate-board symbol checks, single settlement, cancellation and legacy payloads.
 
 ## Browser regression
 
@@ -51,6 +51,8 @@ Durations are configured stage durations plus maximum column stagger, excluding 
 Seven runtime WebP images total approximately 104 KB. Crown yellow is copied from the existing derivative; provenance retains its source crop and prior filename for traceability. Retired derivatives remain unused and do not enter dist. The reference SHA-256 remains 6da26ad0f01ad730eb52e7d360fa7c9641103ccfca6ed0859b1985dbe20a5ee2.
 
 Storage version 1 persists only validated scalar statistics and preferences. Legacy extra board/pending data is ignored; no blanket reset or conversion of earned points occurs. The registry and runtime union contain exactly five normals and FIRE/BONUS. No retired wildcard mechanic remains in current player-facing documentation or code.
+
+The temporary Phase 1 session rule resets only `plays` to 10 when a new page session is initialized; cumulative scores, points, records and sound / fast preferences are preserved. In-session settlement still decrements one play per round.
 
 Phase 1 remains a single-tab local mock. Official member assets, redemption and server authority belong to Phase 2.
 

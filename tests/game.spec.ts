@@ -27,7 +27,7 @@ test('complete round, duplicate start prevention, skip, persisted results and se
   await page.getByRole('button', { name: 'CLOSE · 關閉' }).click();
   await expect(page.getByRole('button', { name: /START EXPERIMENT/ })).toBeEnabled();
   await page.reload();
-  await expect(page.getByTestId('plays')).toHaveText('09');
+  await expect(page.getByTestId('plays')).toHaveText('10');
   await expect(page.getByTestId('points')).toHaveText(stored.stats.mockPoints.toLocaleString());
   await expect(page.getByRole('button', { name: 'FAST MODE' })).toHaveAttribute(
     'aria-pressed',
@@ -89,7 +89,7 @@ test('reward preview never deducts points; modal keyboard focus is trapped and r
   await expect(page.getByTestId('points')).toHaveText('1,000');
 });
 
-test('zero plays, corrupt data recovery, hidden debug and reload during playback', async ({
+test('session play reset, corrupt data recovery, hidden debug and reload during playback', async ({
   page,
 }) => {
   await page.goto('/');
@@ -99,14 +99,15 @@ test('zero plays, corrupt data recovery, hidden debug and reload during playback
     { key: STORAGE_KEY, stats: { ...defaultStats(), plays: 0 } },
   );
   await page.reload();
-  await expect(page.getByRole('button', { name: 'NO PLAY LEFT', exact: true })).toBeDisabled();
+  await expect(page.getByTestId('plays')).toHaveText('10');
+  await expect(page.getByRole('button', { name: /START EXPERIMENT/ })).toBeEnabled();
   await page.evaluate((key) => localStorage.setItem(key, '{broken'), STORAGE_KEY);
   await page.reload();
   await expect(page.getByTestId('plays')).toHaveText('10');
   await page.getByRole('button', { name: /START EXPERIMENT/ }).click();
   await expect(page.getByTestId('plays')).toHaveText('09');
   await page.reload();
-  await expect(page.getByTestId('plays')).toHaveText('09');
+  await expect(page.getByTestId('plays')).toHaveText('10');
   await expect(page.getByRole('button', { name: /START EXPERIMENT/ })).toBeEnabled();
 });
 

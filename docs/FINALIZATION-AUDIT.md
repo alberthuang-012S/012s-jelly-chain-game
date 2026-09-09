@@ -17,3 +17,5 @@
 | Pages / versions                      | A: deployed                            | Existing workflow uses pnpm 11.19.0 / Node 24, relative Vite base works under repository subpath. Do not rewrite deployment.                                                                                                                                                                                                                                                          |
 
 Animation change: pre-paint transform inversion with stable keys, no runtime layout measurement, completion-acknowledged playback, frame-frozen speed settings, cancellation signal for skip/unmount, predecoded assets. No engine rewrite, per-frame React state, or gameplay decision in the DOM.
+
+Temporary session rule: a new page session resets only `plays` to `GAME_CONFIG.initialPlays` (10) and persists that value. In-session round settlement still decrements one play; cumulative statistics and sound / fast preferences remain unchanged.

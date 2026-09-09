@@ -88,6 +88,13 @@ export class PlayerStore {
   read() {
     return { ...this.stats };
   }
+  /**
+   * Phase 1 temporary session rule: every fresh page open receives ten plays.
+   * Cumulative progress and presentation preferences remain untouched.
+   */
+  beginSession() {
+    return this.write({ ...this.stats, plays: C.initialPlays });
+  }
   write(stats: PlayerStats) {
     this.stats = { ...stats };
     try {
